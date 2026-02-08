@@ -1,0 +1,85 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/aml
+    username: aml
+    password: aml
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+    open-in-view: false
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      properties:
+        spring.json.trusted.packages: "*"
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+
+logging:
+  level:
+    root: INFO
+
+aml:
+  kafka:
+    topic:
+      screeningResults: screening-results
+      screeningResultsDlq: screening-results-dlq
+  outbox:
+    maxAttempts: 20
+    initialBackoffMillis: 250
+    maxBackoffMillis: 30000
+    jitterRatio: 0.2
+    dlqTopic: screening-results-dlq
+  pii:
+    mode: ${AML_PII_MODE:local}
+    localHmac:
+      secret: ${AML_PII_HMAC_SECRET:change-me-in-prod}
+      keyId: ${AML_PII_HMAC_KEYID:local-hmac-v1}
+  screening:
+    thresholds:
+      block: 0.85
+      review: 0.70
+  dlq:
+    replay:
+      enabled: ${AML_DLQ_REPLAY_ENABLED:true}
+      batchSize: ${AML_DLQ_REPLAY_BATCH:100}
+      maxAttempts: ${AML_DLQ_REPLAY_MAX_ATTEMPTS:25}
+      initialBackoffMillis: ${AML_DLQ_REPLAY_INITIAL_BACKOFF_MS:500}
+      maxBackoffMillis: ${AML_DLQ_REPLAY_MAX_BACKOFF_MS:30000}
+      jitterRatio: ${AML_DLQ_REPLAY_JITTER:0.2}
+      fixedDelayMillis: ${AML_DLQ_REPLAY_FIXED_DELAY_MS:5000}
+  consumer:
+    topic: screening-results
+    dedup:
+      ttlSeconds: 86400
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
+
+security:
+  users:
+    - username: ops1
+      password: ops1
+      roles: [OPS_REQUESTER]
+    - username: ops2
+      password: ops2
+      roles: [OPS_APPROVER]
+    - username: auditor
+      password: auditor
+      roles: [AUDITOR]
