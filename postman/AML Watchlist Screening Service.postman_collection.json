@@ -1,0 +1,321 @@
+{
+  "info": {
+    "name": "AML Watchlist Screening Service",
+    "_postman_id": "00000000-0000-0000-0000-000000000000",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "txId",
+      "value": ""
+    },
+    {
+      "key": "dlqId",
+      "value": "1"
+    },
+    {
+      "key": "opsRequesterUser",
+      "value": "ops1"
+    },
+    {
+      "key": "opsRequesterPass",
+      "value": "ops1"
+    },
+    {
+      "key": "opsApproverUser",
+      "value": "ops2"
+    },
+    {
+      "key": "opsApproverPass",
+      "value": "ops2"
+    },
+    {
+      "key": "auditorUser",
+      "value": "auditor"
+    },
+    {
+      "key": "auditorPass",
+      "value": "auditor"
+    }
+  ],
+  "item": [
+    {
+      "name": "Swagger UI",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/swagger-ui",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "swagger-ui"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Watchlist Import",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/watchlists/import",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "watchlists",
+            "import"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"source\": \"daily-import\",\n  \"items\": [\n    {\n      \"fullName\": \"Ivan Petrov\",\n      \"firstName\": \"Ivan\",\n      \"lastName\": \"Petrov\",\n      \"dob\": \"1990-01-01\",\n      \"nationality\": \"BY\",\n      \"country\": \"BY\",\n      \"riskLevel\": \"HIGH\",\n      \"aliases\": [\n        \"I. Petrov\"\n      ],\n      \"addressLine1\": \"Main 1\",\n      \"city\": \"Gdansk\",\n      \"postalCode\": \"80-000\",\n      \"addressCountry\": \"PL\"\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "Create Transaction (async)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/transactions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "transactions"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerFullName\": \"Ivan Petrov\",\n  \"customerDob\": \"1990-01-01\",\n  \"customerNationality\": \"BY\",\n  \"customerCountry\": \"BY\",\n  \"customerIdNumber\": \"AB123456\",\n  \"amount\": 100.0,\n  \"currency\": \"EUR\",\n  \"addressLine1\": \"Main 1\",\n  \"city\": \"Gdansk\",\n  \"postalCode\": \"80-000\",\n  \"addressCountry\": \"PL\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Get Screening Result",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/screenings/{{txId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "screenings",
+            "{{txId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DLQ List (multi-sort + searchQ) [ops1 requester]",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{opsRequesterUser}}"
+            },
+            {
+              "key": "password",
+              "value": "{{opsRequesterPass}}"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/dlq/messages?page=0&size=20&sort=receivedAt,desc&sort=nextAttemptAt,asc&searchQ=petrov",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "dlq",
+            "messages"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "20"
+            },
+            {
+              "key": "sort",
+              "value": "receivedAt,desc"
+            },
+            {
+              "key": "sort",
+              "value": "nextAttemptAt,asc"
+            },
+            {
+              "key": "searchQ",
+              "value": "petrov"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "DLQ Request Replay (4-eyes step1) [ops1 requester]",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{opsRequesterUser}}"
+            },
+            {
+              "key": "password",
+              "value": "{{opsRequesterPass}}"
+            }
+          ]
+        },
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/dlq/messages/{{dlqId}}/request",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "dlq",
+            "messages",
+            "{{dlqId}}",
+            "request"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DLQ Approve Replay (4-eyes step2) [ops2 approver]",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{opsApproverUser}}"
+            },
+            {
+              "key": "password",
+              "value": "{{opsApproverPass}}"
+            }
+          ]
+        },
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/dlq/messages/{{dlqId}}/approve",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "dlq",
+            "messages",
+            "{{dlqId}}",
+            "approve"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DLQ Replay by ID [ops2 approver]",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{opsApproverUser}}"
+            },
+            {
+              "key": "password",
+              "value": "{{opsApproverPass}}"
+            }
+          ]
+        },
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/dlq/messages/{{dlqId}}/replay",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "dlq",
+            "messages",
+            "{{dlqId}}",
+            "replay"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Audit Export CSV [auditor]",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{auditorUser}}"
+            },
+            {
+              "key": "password",
+              "value": "{{auditorPass}}"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/audit/screenings/export?from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "audit",
+            "screenings",
+            "export"
+          ],
+          "query": [
+            {
+              "key": "from",
+              "value": "2026-01-01T00:00:00Z"
+            },
+            {
+              "key": "to",
+              "value": "2026-12-31T23:59:59Z"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
